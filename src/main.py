@@ -1,6 +1,14 @@
 from fastapi import FastAPI, HTTPException
 from src.models import SentimentRequest, SentimentResponse
 from src.sentiment import analyze_text
+import logging
+
+# Configurazione base del logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Sentimentify", description="API per analizzare il sentiment di un testo", version="1.0")
 
@@ -15,4 +23,5 @@ async def sentiment_endpoint(request: SentimentRequest):
 
 @app.get("/")
 async def read_root():
+    logger.info("Endpoint root chiamato")
     return {"message": "Benvenuto in Sentimentify!"}
