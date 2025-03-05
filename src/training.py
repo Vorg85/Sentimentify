@@ -7,7 +7,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
-from src.models import SentimentRequest, PredictionResponse
+from src.models import SentimentRequest, PredictionResponse, ConfirmRequest
 
 router = APIRouter()
 
@@ -94,3 +94,30 @@ async def predict_custom(request: SentimentRequest):
 
     prediction = custom_model.predict([request.text])[0]
     return {"text": request.text, "predicted_sentiment": prediction}
+
+@router.post("/confirm")
+async def confirm_record(confirm_req: ConfirmRequest):
+    """
+    Endpoint per confermare se il risultato (testo e sentimento) è corretto.
+    Se confermato, il record viene aggiunto a sample.csv.
+    """
+    if not confirm_req.confirm:
+        return {"message": "Record non aggiunto al dataset."}
+
+    csv_path = "src/sample.csv"
+    # Crea una riga da aggiungere al CSV
+    new_record = pd.DataFrame({"text": [confirm_req.text], "sentiment": [confirm_req.sentiment]})
+    
+    # Se il file esiste, aggiungi il record; altrimenti, crealo con le intestazioni
+    if os.path.exists(csv_path):
+        try:
+            new_record.to_csv(csv_path, mode='a', header=False, index=False)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Errore nell'aggiunta del record: {e}")
+    else:
+        try:
+            new_record.to_csv(csv_path, mode='w', header=True, index=False)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Errore nella creazione del file CSV: {e}")
+    
+    return {"message": "Record aggiunto con successo al dataset."}
