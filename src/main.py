@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from src.models import SentimentRequest, SentimentResponse
 from src.sentiment import analyze_text
 import logging
+from src.training import router as training_router
 
 # Configurazione base del logging
 logging.basicConfig(
@@ -25,3 +26,6 @@ async def sentiment_endpoint(request: SentimentRequest):
 async def read_root():
     logger.info("Endpoint root chiamato")
     return {"message": "Benvenuto in Sentimentify!"}
+
+# Include il router per il training personalizzato
+app.include_router(training_router)
