@@ -41,10 +41,6 @@ async def feedback_endpoint():
     # Richiede all'utente di fornire un feedback sul sentiment (positivo, negativo, neutro)
     return {"last_text": last_text, "last_sentiment": last_sentiment, "feedback": "Inserisci un feedback (positivo, negativo, neutro)"}
 
-        
-    
-
-
 
 @app.get("/")
 async def read_root():
