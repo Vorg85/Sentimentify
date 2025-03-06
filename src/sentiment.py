@@ -1,25 +1,22 @@
 from textblob import TextBlob
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 from langdetect import detect
 
-translator = Translator()
-
 def analyze_text(text: str) -> dict:
-    # Usa langdetect per rilevare la lingua
+    # Rileva la lingua con langdetect
     try:
         detected_lang = detect(text)
-    except Exception as e:
+    except:
         detected_lang = "unknown"
 
-    # Se il testo non è in inglese, traducilo in inglese
+    # Se la lingua non è inglese, traducila
     if detected_lang != "en":
-        translation = translator.translate(text, dest="en")
-        text_for_analysis = translation.text
+        translated_text = GoogleTranslator(source='auto', target='en').translate(text)
     else:
-        text_for_analysis = text
+        translated_text = text
 
-    # Analizza il testo (tradotto se necessario) con TextBlob
-    analysis = TextBlob(text_for_analysis)
+    # Analizza con TextBlob il testo tradotto
+    analysis = TextBlob(translated_text)
     polarity = analysis.sentiment.polarity
 
     if polarity > 0:
@@ -28,5 +25,9 @@ def analyze_text(text: str) -> dict:
         sentiment = "negativo"
     else:
         sentiment = "neutro"
-    
-    return {"sentiment": sentiment, "polarity": polarity, "detected_language": detected_lang}
+
+    return {
+        "sentiment": sentiment,
+        "polarity": polarity,
+        "detected_language": detected_lang
+    }
