@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict
 
 class SentimentRequest(BaseModel):
     text: str
@@ -14,6 +14,7 @@ class PredictionResponse(BaseModel):
     translated_text: str
     predicted_sentiment: str
     confirm_message: str = "Scegli se la predizione è corretta o errata. Se errata, indica il sentimento atteso e invia i dati a /confirm."
+    count_vector: Optional[Dict[str, int]] = {}  # Aggiunge i conteggi delle parole
 
 class ConfirmRequest(BaseModel):
     # Il testo originale (opzionale, a scopo informativo)

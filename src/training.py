@@ -71,7 +71,7 @@ async def predict_custom(request: SentimentRequest):
     global custom_model
     if custom_model is None:
         raise HTTPException(status_code=400, detail="Il modello non è stato addestrato. Esegui /train_local_bg prima di fare previsioni.")
-
+    
     # Rileva la lingua
     try:
         detected_lang = detect(request.text)
@@ -86,11 +86,20 @@ async def predict_custom(request: SentimentRequest):
 
     # Esegui la predizione con il modello personalizzato
     prediction = custom_model.predict([text_for_prediction])[0]
+    
+    # Ottieni il vettore dei conteggi dal CountVectorizer del modello
+    vectorizer = custom_model.named_steps["vect"]
+    vector = vectorizer.transform([text_for_prediction])
+    count_array = vector.toarray()[0]
+    feature_names = vectorizer.get_feature_names_out()
+    count_dict = dict(zip(feature_names, count_array))
+    
     return {
         "text": request.text,
         "translated_text": text_for_prediction,
         "predicted_sentiment": prediction,
-        "confirm_message": "Scegli se la predizione è corretta o errata. Se errata, indica il sentimento atteso e invia i dati a /confirm."
+        "confirm_message": "Scegli se la predizione è corretta o errata. Se errata, indica il sentimento atteso e invia i dati a /confirm.",
+        "count_vector": count_dict
     }
     
 @router.post("/confirm")

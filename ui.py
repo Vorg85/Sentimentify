@@ -4,7 +4,7 @@ import requests
 # Imposta l'URL dell'API FastAPI (modifica con il tuo URL se deployato)
 API_URL = "https://sentimentify-app-prttt.ondigitalocean.app/"
 
-st.title("Sentimentify - Interfaccia per Analisi del Sentiment di una Frase")
+st.title("Sentimentify - Interfaccia per Analisi del Sentiment")
 
 # Sezione per l'analisi standard con TextBlob
 st.header("Analisi Standard (TextBlob)")
@@ -25,7 +25,7 @@ if st.button("Analizza con TextBlob"):
         st.warning("Inserisci un testo prima di analizzare!")
 
 # Sezione per l'analisi con il modello personalizzato
-st.header("Analisi con il Modello Personalizzato (Logistic Regression)")
+st.header("Analisi con il Modello Personalizzato")
 if st.button("Analizza con il Modello Personalizzato"):
     if text_input.strip():
         with st.spinner("Predizione in corso..."):
@@ -34,8 +34,7 @@ if st.button("Analizza con il Modello Personalizzato"):
             result = response.json()
             st.write(f"**Predizione:** {result['predicted_sentiment']}")
             st.info(result['confirm_message'])
-            # Mostra le opzioni per confermare il risultato
-            st.header("Conferma il Risultato della Predizione")
+            # Sezione di conferma, usando uno st.form per garantire il submit insieme
             with st.form("confirm_form"):
                 choice = st.radio("Il risultato è corretto?", ("Predizione esatta", "Predizione errata"))
                 expected = None
@@ -68,10 +67,35 @@ if st.button("Avvia Training in Background"):
         st.success(response.json()["message"])
     else:
         st.error("Errore nell'avvio del training.")
-
 if st.button("Controlla Stato del Training"):
     response = requests.get(f"{API_URL}/train_status")
     if response.status_code == 200:
-        st.info(f"**Stato del Training:** {response.json()['message']}")
+        st.write(response.json()["status"])
     else:
         st.error("Errore nel recupero dello stato del training.")
+
+# Sezione informativa sul funzionamento del modello
+with st.expander("Come funziona il modello?"):
+    st.markdown("""
+    **1. Conversione del Testo in Numeri:**
+    
+    - Il testo viene **tokenizzato**: viene diviso in parole (token).
+    - Con il **CountVectorizer**, il testo viene trasformato in un vettore numerico, in cui ogni elemento rappresenta la frequenza di una parola nel testo.
+    
+    **2. Regressione Logistica per la Classificazione:**
+    
+    - **Obiettivo:** Assegnare a ciascun testo una probabilità di appartenere a ciascuna classe (positivo, negativo, neutro).
+    - **Processo:**
+      - Durante l'**addestramento**, il modello impara dei pesi per ogni parola (cioè, quanto è importante quella parola per determinare il sentimento) e un bias.
+      - Quando un nuovo testo viene convertito in vettore, il modello calcola una **somma pesata** (prodotto tra i vettori e i pesi) e aggiunge il bias.
+      - La somma viene trasformata tramite una **funzione sigmoide** (o softmax, in caso di classificazione multiclasse) per ottenere una probabilità per ogni classe.
+      - La classe con la probabilità più alta viene selezionata come **predizione del sentimento**.
+      
+    **3. Supporto Multilingue:**
+    
+    - Se il testo non è in inglese, viene rilevata la lingua e tradotto in inglese prima della predizione, assicurando che il modello lavori con dati in una lingua uniforme.
+    
+    **Conclusione:**
+    
+    La combinazione di questi processi consente al modello di apprendere dai dati (durante il training) e di fare previsioni accurate sui testi in ingresso. Se la predizione non corrisponde a quanto atteso, puoi fornire un feedback per migliorare il dataset.
+    """)
