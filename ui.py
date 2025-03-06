@@ -4,7 +4,7 @@ import requests
 # Imposta l'URL dell'API FastAPI (modifica con il tuo URL se deployato)
 API_URL = "https://sentimentify-app-prttt.ondigitalocean.app/"
 
-st.title("Sentimentify - Interfaccia per Analisi del Sentiment")
+st.title("Sentimentify - Interfaccia per Analisi del Sentiment di una Frase")
 
 # Sezione per l'analisi standard con TextBlob
 st.header("Analisi Standard (TextBlob)")
@@ -25,7 +25,7 @@ if st.button("Analizza con TextBlob"):
         st.warning("Inserisci un testo prima di analizzare!")
 
 # Sezione per l'analisi con il modello personalizzato
-st.header("Analisi con il Modello Personalizzato")
+st.header("Analisi con il Modello Personalizzato (Logistic Regression)")
 if st.button("Analizza con il Modello Personalizzato"):
     if text_input.strip():
         with st.spinner("Predizione in corso..."):
@@ -72,6 +72,6 @@ if st.button("Avvia Training in Background"):
 if st.button("Controlla Stato del Training"):
     response = requests.get(f"{API_URL}/train_status")
     if response.status_code == 200:
-        st.write(response.json()["status"])
+        st.info(f"**Stato del Training:** {response.json()['message']}")
     else:
         st.error("Errore nel recupero dello stato del training.")
