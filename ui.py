@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # Imposta l'URL dell'API FastAPI (modifica con il tuo URL se deployato)
-API_URL = "https://tuo-fastapi-app.do.app"
+API_URL = "https://sentimentify-app-prttt.ondigitalocean.app/"
 
 st.title("Sentimentify - Interfaccia per Analisi del Sentiment")
 
