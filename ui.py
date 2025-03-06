@@ -35,23 +35,26 @@ if st.button("Analizza con il Modello Personalizzato"):
             st.write(f"**Predizione:** {result['predicted_sentiment']}")
             st.info(result['confirm_message'])
             # Mostra le opzioni per confermare il risultato
-            choice = st.radio("Il risultato è corretto?", ("Predizione esatta", "Predizione errata"))
-            expected = None
-            if choice == "Predizione errata":
-                expected = st.selectbox("Qual è il sentimento atteso?", ("positivo", "negativo", "neutro"))
-            if st.button("Invia Conferma"):
-                payload = {
-                    "text": text_input,  # puoi mantenere anche il testo originale se vuoi mostrarlo
-                    "translated_text": result["translated_text"],
-                    "actual_sentiment": result["predicted_sentiment"],
-                    "user_feedback": "correct" if choice == "Predizione esatta" else "incorrect",
-                    "expected_sentiment": expected
-                }
-                conf_response = requests.post(f"{API_URL}/confirm", json=payload)
-                if conf_response.status_code == 200:
-                    st.success(conf_response.json()["message"])
-                else:
-                    st.error("Errore nell'invio della conferma.")
+            st.header("Conferma il Risultato della Predizione")
+            with st.form("confirm_form"):
+                choice = st.radio("Il risultato è corretto?", ("Predizione esatta", "Predizione errata"))
+                expected = None
+                if choice == "Predizione errata":
+                    expected = st.selectbox("Qual è il sentimento atteso?", ("positivo", "negativo", "neutro"))
+                submitted = st.form_submit_button("Invia Conferma")
+                if submitted:
+                    payload = {
+                        "text": text_input,
+                        "translated_text": result["translated_text"],
+                        "actual_sentiment": result["predicted_sentiment"],
+                        "user_feedback": "correct" if choice == "Predizione esatta" else "incorrect",
+                        "expected_sentiment": expected
+                    }
+                    conf_response = requests.post(f"{API_URL}/confirm", json=payload)
+                    if conf_response.status_code == 200:
+                        st.success(conf_response.json()["message"])
+                    else:
+                        st.error("Errore nell'invio della conferma.")
         else:
             st.error("Errore durante la predizione.")
     else:
@@ -69,6 +72,6 @@ if st.button("Avvia Training in Background"):
 if st.button("Controlla Stato del Training"):
     response = requests.get(f"{API_URL}/train_status")
     if response.status_code == 200:
-        st.write(response.json())
+        st.write(response.json()["status"])
     else:
         st.error("Errore nel recupero dello stato del training.")

@@ -95,20 +95,39 @@ async def predict_custom(request: SentimentRequest):
     
 @router.post("/confirm")
 async def confirm_record(confirm_req: ConfirmRequest):
+    # Log per il debug
     print(f"Richiesta di conferma ricevuta: {confirm_req}")
+
+    # Verifica che il campo 'user_feedback' sia valido
     if confirm_req.user_feedback not in ["correct", "incorrect"]:
-        raise HTTPException(status_code=400, detail="user_feedback deve essere 'correct' o 'incorrect'.")
+        raise HTTPException(status_code=400, detail="Il campo 'user_feedback' deve essere 'correct' o 'incorrect'.")
+
+    # Determina il sentimento finale: se il feedback è 'correct', usa actual_sentiment;
+    # se 'incorrect', controlla che expected_sentiment sia fornito e usalo.
     final_sentiment = confirm_req.actual_sentiment
     if confirm_req.user_feedback == "incorrect":
         if not confirm_req.expected_sentiment:
-            raise HTTPException(status_code=400, detail="Specificare expected_sentiment se la predizione è errata.")
+            raise HTTPException(status_code=400, detail="Specificare 'expected_sentiment' se la predizione è errata.")
         final_sentiment = confirm_req.expected_sentiment
+
+    # Definisci il percorso del file CSV
     csv_path = "src/sample.csv"
-    new_record = pd.DataFrame({"text": [confirm_req.translated_text], "sentiment": [final_sentiment]})
+
+    # Crea il record da salvare usando il testo tradotto (in inglese)
+    new_record = pd.DataFrame({
+        "text": [confirm_req.translated_text],
+        "sentiment": [final_sentiment]
+    })
+
+    # Se il file non esiste, è necessario includere l'header
     header_needed = not os.path.exists(csv_path)
+
+    # Prova ad appendere il record al file CSV
     try:
         new_record.to_csv(csv_path, mode='a', header=header_needed, index=False)
-        print(f"Record aggiunto al dataset: {new_record}")
+        print(f"Record aggiunto: {new_record}")
     except Exception as e:
+        print(f"Errore durante l'aggiunta del record: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nell'aggiunta del record: {e}")
+
     return {"message": f"Record aggiunto con successo al dataset con sentimento '{final_sentiment}'."}
