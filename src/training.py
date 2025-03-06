@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from textblob import TextBlob
 from googletrans import Translator
+from langdetect import detect
 
 from src.models import SentimentRequest, PredictionResponse, ConfirmRequest
 
@@ -62,17 +63,20 @@ async def predict_custom(request: SentimentRequest):
     if custom_model is None:
         raise HTTPException(status_code=400, detail="Il modello non è stato addestrato. Esegui /train_local_bg prima di fare previsioni.")
     
-    # Rileva la lingua e traduci in inglese se necessario
     translator = Translator()
-    blob = TextBlob(request.text)
-    detected_lang = blob.detect_language()
+    # Usa langdetect per rilevare la lingua del testo
+    try:
+        detected_lang = detect(request.text)
+    except Exception as e:
+        detected_lang = "unknown"
+
     if detected_lang != "en":
         translation = translator.translate(request.text, dest="en")
         text_for_prediction = translation.text
     else:
         text_for_prediction = request.text
 
-    # Effettua la predizione utilizzando il testo tradotto
+    # Effettua la predizione usando il testo (tradotto se necessario)
     prediction = custom_model.predict([text_for_prediction])[0]
     return {
         "text": request.text,
@@ -83,10 +87,6 @@ async def predict_custom(request: SentimentRequest):
 
 @router.post("/confirm")
 async def confirm_record(confirm_req: ConfirmRequest):
-    """
-    Se user_feedback è "correct", usa actual_sentiment; se "incorrect", usa expected_sentiment per aggiornare il CSV.
-    Il record verrà salvato usando il campo translated_text, in modo da avere il dato in inglese.
-    """
     if confirm_req.user_feedback not in ["correct", "incorrect"]:
         raise HTTPException(status_code=400, detail="user_feedback deve essere 'correct' o 'incorrect'.")
     final_sentiment = confirm_req.actual_sentiment
@@ -95,7 +95,6 @@ async def confirm_record(confirm_req: ConfirmRequest):
             raise HTTPException(status_code=400, detail="Specificare expected_sentiment se la predizione è errata.")
         final_sentiment = confirm_req.expected_sentiment
     csv_path = "src/sample.csv"
-    # Salva il testo tradotto anziché il testo originale
     new_record = pd.DataFrame({"text": [confirm_req.translated_text], "sentiment": [final_sentiment]})
     header_needed = not os.path.exists(csv_path)
     try:
@@ -103,4 +102,3 @@ async def confirm_record(confirm_req: ConfirmRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Errore nell'aggiunta del record: {e}")
     return {"message": f"Record aggiunto con successo al dataset con sentimento '{final_sentiment}'."}
-
